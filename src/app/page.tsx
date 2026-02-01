@@ -121,8 +121,6 @@ export default function Home() {
     }
   };
 
-  const [copySuccess, setCopySuccess] = useState(false);
-
   const copyToClipboard = async () => {
     if (shareUrl) {
       await navigator.clipboard.writeText(shareUrl);
