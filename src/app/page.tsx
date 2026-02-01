@@ -6,13 +6,14 @@ interface FileInfo {
   name: string;
   size: number;
   type: string;
+  preview?: string;
 }
 
 export default function Home() {
   const [file, setFile] = useState<FileInfo | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,19 +24,61 @@ export default function Home() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const handleFileSelect = useCallback((selectedFile: File | null) => {
+  const getFileIcon = (filename: string): string => {
+    const ext = filename.split(".").pop()?.toLowerCase() || "";
+    const icons: Record<string, string> = {
+      pdf: "picture_as_pdf",
+      doc: "description",
+      docx: "description",
+      xls: "table_chart",
+      xlsx: "table_chart",
+      ppt: "slideshow",
+      pptx: "slideshow",
+      jpg: "image",
+      jpeg: "image",
+      png: "image",
+      gif: "image",
+      webp: "image",
+      mp4: "videocam",
+      mov: "videocam",
+      mp3: "audiotrack",
+      wav: "audiotrack",
+      zip: "folder_zip",
+      rar: "folder_zip",
+      json: "code",
+      txt: "article",
+      md: "description",
+      csv: "table_chart",
+    };
+    return icons[ext] || "insert_drive_file";
+  };
+
+  const createFilePreview = async (selectedFile: File): Promise<string | undefined> => {
+    if (selectedFile.type.startsWith("image/")) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.readAsDataURL(selectedFile);
+      });
+    }
+    return undefined;
+  };
+
+  const handleFileSelect = useCallback(async (selectedFile: File | null) => {
     if (!selectedFile) return;
     
-    // Check file size (100MB limit for free tier)
     if (selectedFile.size > 100 * 1024 * 1024) {
       setError("File too large. Free tier max: 100MB");
       return;
     }
     
+    const preview = await createFilePreview(selectedFile);
+    
     setFile({
       name: selectedFile.name,
       size: selectedFile.size,
       type: selectedFile.type,
+      preview,
     });
     setUploadProgress(0);
     setCopySuccess(false);
@@ -43,10 +86,11 @@ export default function Home() {
     setShareUrl(null);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    handleFileSelect(e.dataTransfer.files[0]);
+    const file = e.dataTransfer.files[0];
+    await handleFileSelect(file);
   }, [handleFileSelect]);
 
   const handleUpload = async () => {
@@ -55,9 +99,8 @@ export default function Home() {
     setUploading(true);
     setUploadProgress(0);
     setError(null);
-    
+
     try {
-      // Get file data
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       const fileToUpload = fileInput?.files?.[0];
       
@@ -65,13 +108,13 @@ export default function Home() {
         throw new Error("No file selected");
       }
       
-      // Read file as base64
       const reader = new FileReader();
       reader.onload = async () => {
         const base64Data = reader.result as string;
-        const base64Content = base64Data.split(',')[1]; // Remove data URL prefix
+        const base64Content = base64Data.split(',')[1];
         
-        // Upload to GitHub Gist
+        setUploadProgress(15);
+        
         const gistData = {
           description: `clawshare:${file.name}`,
           public: false,
@@ -82,8 +125,7 @@ export default function Home() {
           }
         };
         
-        console.log("Uploading to Gist...");
-        setUploadProgress(10);
+        setUploadProgress(30);
         
         const response = await fetch('/api/gist', {
           method: 'POST',
@@ -91,16 +133,17 @@ export default function Home() {
           body: JSON.stringify(gistData)
         });
         
+        setUploadProgress(70);
+        
         const data = await response.json();
-        console.log("Gist response:", data);
-        setUploadProgress(80);
         
         if (!response.ok) {
           throw new Error(data.error || "Failed to upload");
         }
         
+        setUploadProgress(90);
+        
         const url = `${window.location.origin}/s/${data.gistId}`;
-        console.log("Share URL:", url);
         setShareUrl(url);
         setUploadProgress(100);
         setUploading(false);
@@ -129,159 +172,179 @@ export default function Home() {
     }
   };
 
-  const shareViaSystem = async () => {
-    if (shareUrl && navigator.share) {
-      try {
-        await navigator.share({
-          title: `Share ${file?.name || 'file'}`,
-          text: 'Check out this file I shared via ClawShare P2P!',
-          url: shareUrl,
-        });
-      } catch (err) {
-        // User cancelled or error
-      }
-    }
+  const resetUpload = () => {
+    setFile(null);
+    setShareUrl(null);
+    setUploadProgress(0);
+    setError(null);
   };
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-claw-surface">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-surface/95 backdrop-blur-sm border-b border-outline/20">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🦞</span>
-            <span className="text-headline font-bold text-on-surface">clawshare</span>
-            <span className="text-label px-2 py-0.5 rounded-full bg-red-100 text-red-700">XYZ</span>
+            <span className="text-3xl animate-bounce-gentle">🦞</span>
+            <span className="text-xl font-bold text-claw-dark font-['Fredoka']">clawshare</span>
           </div>
-          <button className="btn-text">
-            <span className="material-symbols-rounded">settings</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button className="chip-free">
+              <span className="material-symbols-rounded text-sm">bolt</span>
+              10 transfers left
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 py-6 animate-fade-in">
+      <main className="max-w-2xl mx-auto px-4 py-8 animate-fade-in">
         {/* Hero Section */}
-        <div className="text-center mb-6">
-          <h1 className="text-headline text-on-surface mb-2">
-            Share files <span className="text-red-500">P2P</span>
+        <div className="text-center mb-8">
+          <h1 className="text-hero mb-3">
+            Share files <span className="text-claw-primary">P2P</span>
           </h1>
-          <p className="text-body text-on-surface-variant">
-            Direct transfer. Encrypted. Free.
+          <p className="text-body text-claw-muted text-lg">
+            Direct. Encrypted. Free. No server in between.
           </p>
         </div>
 
-        {/* Free Tier Badge */}
-        <div className="flex justify-center mb-6">
-          <span className="chip">
-            <span className="material-symbols-rounded text-red-500">bolt</span>
-            Free: 10 transfers today
-          </span>
+        {/* Trust Badges */}
+        <div className="flex justify-center gap-3 mb-6 flex-wrap">
+          <div className="trust-badge">
+            <span className="material-symbols-rounded text-sm">lock</span>
+            End-to-end encrypted
+          </div>
+          <div className="trust-badge">
+            <span className="material-symbols-rounded text-sm">wifi_find</span>
+            Direct P2P transfer
+          </div>
+          <div className="trust-badge">
+            <span className="material-symbols-rounded text-sm">code</span>
+            Open source
+          </div>
         </div>
 
-        {/* Drop Zone */}
-        <div
-          className={`drop-zone mb-4 ${dragOver ? 'drag-over' : ''}`}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          onClick={() => document.getElementById('file-input')?.click()}
-        >
-          <input
-            id="file-input"
-            type="file"
-            className="hidden"
-            onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
-          />
-          
-          {file ? (
-            <div className="animate-slide-up">
-              <span className="material-symbols-rounded text-4xl text-red-500 mb-2">
-                description
-              </span>
-              <p className="text-title text-on-surface mb-1">{file.name}</p>
-              <p className="text-label text-on-surface-variant">{formatFileSize(file.size)}</p>
-            </div>
-          ) : (
-            <div>
-              <span className="material-symbols-rounded text-5xl text-on-surface-variant mb-3">
-                cloud_upload
-              </span>
-              <p className="text-body text-on-surface mb-1">
-                Drop your file here
-              </p>
-              <p className="text-label text-on-surface-variant">
-                or tap to browse
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Upload Progress */}
-        {uploading && uploadProgress > 0 && uploadProgress < 100 && (
-          <div className="mb-4 animate-slide-up">
-            <div className="progress-bar">
-              <div
-                className="progress-bar-fill"
-                style={{ width: `${uploadProgress}%` }}
+        {/* Upload/Share Zone */}
+        {!shareUrl ? (
+          <>
+            {/* Drop Zone */}
+            <div
+              className={`drop-zone mb-6 ${dragOver ? 'drag-over' : ''} ${file ? 'py-6' : 'py-16'}`}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById('file-input')?.click()}
+            >
+              <input
+                id="file-input"
+                type="file"
+                className="hidden"
+                onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
               />
-            </div>
-            <p className="text-label text-on-surface-variant mt-1 text-center">
-              Uploading... {uploadProgress}%
-            </p>
-          </div>
-        )}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 rounded-card text-red-700 text-body">
-            <span className="material-symbols-rounded mr-2">error</span>
-            {error}
-          </div>
-        )}
-
-        {/* Selected File Action */}
-        {file && !shareUrl && (
-          <div className="animate-slide-up">
-            <button
-              onClick={handleUpload}
-              disabled={uploading}
-              className="btn btn-filled w-full mb-3"
-            >
-              {uploading ? (
-                <>
-                  <span className="material-symbols-rounded animate-spin">sync</span>
-                  Uploading...
-                </>
+              
+              {file ? (
+                /* Selected File Preview */
+                <div className="animate-scale-in">
+                  {file.preview ? (
+                    <div className="mb-4">
+                      <img 
+                        src={file.preview} 
+                        alt={file.name}
+                        className="w-24 h-24 object-cover rounded-xl mx-auto shadow-md"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 bg-claw-light rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <span className="material-symbols-rounded text-4xl text-claw-primary">
+                        {getFileIcon(file.name)}
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-title text-claw-dark mb-1">{file.name}</p>
+                  <p className="text-label text-claw-muted mb-4">{formatFileSize(file.size)}</p>
+                  
+                  <button
+                    onClick={(e) => { e.stopPropagation(); resetUpload(); }}
+                    className="btn-text text-sm"
+                  >
+                    <span className="material-symbols-rounded">close</span>
+                    Remove
+                  </button>
+                </div>
               ) : (
-                <>
-                  <span className="material-symbols-rounded">send</span>
-                  Create Share Link
-                </>
+                /* Empty State */
+                <div className="animate-scale-in">
+                  <div className="w-24 h-24 bg-gradient-to-br from-claw-light to-orange-100 rounded-3xl flex items-center justify-center mx-auto mb-4 drop-zone-pulse">
+                    <span className="material-symbols-rounded text-5xl text-claw-primary">
+                      cloud_upload
+                    </span>
+                  </div>
+                  <p className="text-title text-claw-dark mb-2">
+                    Drop files here
+                  </p>
+                  <p className="text-body text-claw-muted mb-3">
+                    or tap to browse
+                  </p>
+                  <p className="text-label text-claw-muted">
+                    Up to 100 MB • Images, PDFs, Documents, Videos
+                  </p>
+                </div>
               )}
-            </button>
-            <button
-              onClick={() => setFile(null)}
-              className="btn btn-text w-full"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
+            </div>
 
-        {/* Share URL Result */}
-        {shareUrl && (
-          <div className="card animate-slide-up">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="material-symbols-rounded text-green-500">check_circle</span>
-              <span className="text-title text-on-surface">Link Ready!</span>
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center gap-2 animate-slide-up">
+                <span className="material-symbols-rounded">error</span>
+                {error}
+              </div>
+            )}
+
+            {/* Upload Progress */}
+            {uploading && (
+              <div className="mb-4 animate-slide-up">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-body font-medium">Uploading...</span>
+                  <span className="text-label text-claw-muted">{uploadProgress}%</span>
+                </div>
+                <div className="progress-bar">
+                  <div
+                    className="progress-bar-fill"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Upload Button */}
+            {file && !uploading && (
+              <button
+                onClick={handleUpload}
+                className="btn-filled w-full animate-slide-up"
+              >
+                <span className="material-symbols-rounded">send</span>
+                Create Share Link
+              </button>
+            )}
+          </>
+        ) : (
+          /* Share Link Result */
+          <div className="card animate-scale-in">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <span className="material-symbols-rounded text-green-600">check_circle</span>
+              </div>
+              <span className="text-title">Link Ready!</span>
             </div>
             
-            <div className="bg-surface-variant rounded-lg p-3 mb-3 break-all text-body font-mono">
+            <div className="bg-gray-100 rounded-xl p-4 mb-4 break-all text-body font-mono">
               {shareUrl}
             </div>
             
-            <div className="flex gap-2 mb-3">
+            <div className="flex gap-3 mb-4">
               <button
                 onClick={copyToClipboard}
-                className="btn btn-filled flex-1"
+                className="btn-filled flex-1"
               >
                 <span className="material-symbols-rounded">
                   {copySuccess ? "check" : "content_copy"}
@@ -291,8 +354,14 @@ export default function Home() {
               
               {typeof navigator !== 'undefined' && navigator.share && (
                 <button
-                  onClick={shareViaSystem}
-                  className="btn btn-tonal"
+                  onClick={() => {
+                    navigator.share({
+                      title: `Share ${file?.name || 'file'}`,
+                      text: 'Check out this file I shared via ClawShare P2P!',
+                      url: shareUrl,
+                    });
+                  }}
+                  className="btn-tonal"
                 >
                   <span className="material-symbols-rounded">share</span>
                 </button>
@@ -300,8 +369,8 @@ export default function Home() {
             </div>
             
             <button
-              onClick={() => { setFile(null); setShareUrl(null); setUploadProgress(0); }}
-              className="btn btn-text w-full"
+              onClick={resetUpload}
+              className="btn-text w-full"
             >
               <span className="material-symbols-rounded">add</span>
               Share Another File
@@ -309,46 +378,48 @@ export default function Home() {
           </div>
         )}
 
-        {/* Features */}
-        <div className="mt-8 grid grid-cols-3 gap-4">
-          <div className="text-center">
-            <span className="material-symbols-rounded text-3xl text-red-500 mb-1">
-              speed
-            </span>
-            <p className="text-label text-on-surface-variant">P2P Fast</p>
-          </div>
-          <div className="text-center">
-            <span className="material-symbols-rounded text-3xl text-red-500 mb-1">
-              lock
-            </span>
-            <p className="text-label text-on-surface-variant">Encrypted</p>
-          </div>
-          <div className="text-center">
-            <span className="material-symbols-rounded text-3xl text-red-500 mb-1">
-              code
-            </span>
-            <p className="text-label text-on-surface-variant">Open Source</p>
+        {/* Features Section */}
+        <div className="mt-12">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="feature-card">
+              <span className="material-symbols-rounded text-4xl text-claw-primary mb-2">
+                speed
+              </span>
+              <p className="text-label font-semibold text-claw-dark mb-1">Blazing Fast</p>
+              <p className="text-xs text-claw-muted">Direct P2P transfer, no server bottleneck</p>
+            </div>
+            
+            <div className="feature-card">
+              <span className="material-symbols-rounded text-4xl text-claw-primary mb-2">
+                lock
+              </span>
+              <p className="text-label font-semibold text-claw-dark mb-1">Encrypted</p>
+              <p className="text-xs text-claw-muted">End-to-end security, your files stay yours</p>
+            </div>
+            
+            <div className="feature-card">
+              <span className="material-symbols-rounded text-4xl text-claw-primary mb-2">
+                code
+              </span>
+              <p className="text-label font-semibold text-claw-dark mb-1">Open Source</p>
+              <p className="text-xs text-claw-muted">Transparent, auditable, community-driven</p>
+            </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer className="mt-12 text-center">
+          <p className="text-label text-claw-muted">
+            Built with ❤️ by <a href="https://github.com/danieloleary" className="text-claw-primary hover:underline">@danieloleary</a>
+          </p>
+          <p className="text-label text-claw-muted mt-1">
+            <a href="https://github.com/danieloleary/clawshare-p2p" className="hover:text-claw-primary">View source</a> • <a href="#" className="hover:text-claw-primary">How it works</a>
+          </p>
+        </footer>
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t border-outline/20">
-        <div className="max-w-md mx-auto flex justify-around py-2">
-          <button className="btn btn-filled rounded-full">
-            <span className="material-symbols-rounded">home</span>
-          </button>
-          <button className="btn btn-text rounded-full">
-            <span className="material-symbols-rounded">send</span>
-          </button>
-          <button className="btn btn-text rounded-full">
-            <span className="material-symbols-rounded">settings</span>
-          </button>
-        </div>
-      </nav>
-
-      {/* Spacer for bottom nav */}
-      <div className="h-20" />
+      {/* Bottom Navigation Spacer */}
+      <div className="h-4" />
     </div>
   );
 }
