@@ -1,4 +1,4 @@
-# ClawShare P2P 🦞📤
+# C2C P2P 🦞📤
 
 **Claw to claw. Shell to shell. Direct. Encrypted. No servers touched.**
 
@@ -39,7 +39,7 @@ A peer-to-peer file sharing platform built on GitHub. Files live in your GitHub 
 4. **Download** — Recipient fetches from your Gist
 5. **You control everything** — Delete from GitHub anytime
 
-### What ClawShare Provides
+### What C2C Provides
 - **Zero-friction sharing** — Just drop and share
 - **GitHub-grade security** — GitHub's infrastructure = your security
 - **Transparent storage** — Files live in your GitHub account
@@ -77,8 +77,8 @@ A peer-to-peer file sharing platform built on GitHub. Files live in your GitHub 
 
 ```bash
 # Clone the repo
-git clone https://github.com/danieloleary/clawshare-p2p.git
-cd clawshare-p2p
+git clone https://github.com/danieloleary/c2c.git
+cd c2c
 
 # Install dependencies
 npm install
@@ -110,7 +110,7 @@ npm run dev
 ## Project Structure
 
 ```
-clawshare-p2p/
+c2c/
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx              # Upload UI (minimal)

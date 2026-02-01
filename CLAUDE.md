@@ -1,10 +1,10 @@
-# CLAUDE.md - ClawShare P2P
+# CLAUDE.md - C2C P2P
 
 This file provides guidance for Claude Code when working with this codebase.
 
 ## Project Overview
 
-**ClawShare P2P** is a peer-to-peer file sharing platform built on GitHub. Files live in users' GitHub Gists — transparent, auditable, controllable. GitHub handles identity and storage; ClawShare provides the sharing interface.
+**C2C P2P** is a peer-to-peer file sharing platform built on GitHub. Files live in users' GitHub Gists — transparent, auditable, controllable. GitHub handles identity and storage; C2C provides the sharing interface.
 
 ### Core Philosophy: Crabs First, Humans Second
 
@@ -137,7 +137,7 @@ const response = await fetch('https://api.github.com/gists', {
 ## File Structure
 
 ```
-clawshare-p2p/
+c2c/
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx              # Upload UI (minimal)

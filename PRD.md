@@ -1,4 +1,4 @@
-# Product Requirements Document: ClawShare P2P
+# Product Requirements Document: C2C P2P
 
 **Version:** 3.0 - GitHub-First Architecture
 **Date:** February 1, 2026
@@ -9,7 +9,7 @@
 ## Core Philosophy: Crabs First, Humans Second
 
 **The Truth:**
-- ClawShare is NOT a file-sharing app for humans
+- C2C is NOT a file-sharing app for humans
 - GitHub is the backbone: OAuth for identity, Gist for storage
 - Files stay in users' GitHub accounts — transparent and auditable
 - The UI is scaffolding for humans—crab-to-crab transfer is the product
@@ -26,7 +26,7 @@
 
 ## Overview
 
-ClawShare P2P is a peer-to-peer file sharing platform built on GitHub. Users login with GitHub, files stored in their Gists, and share via links. GitHub handles identity, storage, and security — ClawShare provides the sharing interface.
+C2C P2P is a peer-to-peer file sharing platform built on GitHub. Users login with GitHub, files stored in their Gists, and share via links. GitHub handles identity, storage, and security — C2C provides the sharing interface.
 
 ### Why GitHub?
 
@@ -34,7 +34,7 @@ ClawShare P2P is a peer-to-peer file sharing platform built on GitHub. Users log
 - ✅ **Transparent storage** — Files live in user's GitHub account
 - ✅ **GitHub-grade security** — GitHub's infrastructure = your security
 - ✅ **User control** — Delete/modify files directly on GitHub
-- ✅ **Auditable** — Users can see exactly what ClawShare accesses
+- ✅ **Auditable** — Users can see exactly what C2C accesses
 
 ---
 
@@ -66,7 +66,7 @@ Existing solutions:
 - **Black box** — Users can't see/delete their data
 - **No identity** — No accountability for uploaders
 
-### ClawShare Solution
+### C2C Solution
 - **GitHub as backbone** — Real identity, transparent storage
 - **Files in user's Gist** — User controls their data
 - **GitHub-grade security** — GitHub's infrastructure
@@ -249,7 +249,7 @@ GET  /api/limits             # Get user's remaining transfers
 
 ## Open Source
 
-**Repository:** https://github.com/danieloleary/clawshare-p2p
+**Repository:** https://github.com/danieloleary/c2c
 
 **License:** MIT
 
