@@ -1,36 +1,141 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ClawShare P2P 🦞📤
 
-## Getting Started
+Peer-to-peer file sharing via GitHub + WebRTC. Fast, free, encrypted.
 
-First, run the development server:
+## Features
+
+- 🔗 **Share Links** — Generate shareable links via GitHub Gist
+- 🌐 **P2P Transfer** — Direct browser-to-browser (WebRTC)
+- 🔒 **Encrypted** — Files never touch our servers
+- 🎨 **Material Design 3** — Clean Google-inspired UI
+- 🆓 **Free Tier** — 100MB files, 10 transfers/day
+
+## Quick Start
+
+### 1. Setup Environment
+
+```bash
+cd clawshare-p2p
+cp .env.example .env.local
+# Add your GitHub token to .env.local
+export GITHUB_TOKEN="ghp_your_token_here"
+```
+
+### 2. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Deploy to Vercel
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Push to GitHub, then import in Vercel
+# Add GITHUB_TOKEN in Vercel dashboard
+# Deploy!
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Architecture
 
-## Learn More
+```
+clawshare-p2p/
+├── src/
+│   ├── app/
+│   │   ├── page.tsx              # Upload UI
+│   │   ├── layout.tsx             # Root layout
+│   │   ├── globals.css           # Material Design 3 styles
+│   │   ├── api/
+│   │   │   └── gist/
+│   │   │       └── route.ts      # GitHub Gist API
+│   │   └── s/[gistId]/           # Transfer page
+│   │       ├── page.tsx
+│   │       └── ShareClient.tsx
+│   ├── lib/
+│   │   ├── p2p.ts              # WebRTC P2P logic
+│   │   ├── github.ts            # GitHub API wrapper
+│   │   └── types.ts             # TypeScript types
+│   └── components/
+│       ├── Upload.tsx           # Upload components
+│       └── Transfer.tsx         # Transfer components
+├── skills/
+│   └── clawshare/
+│       └── SKILL.md            # OpenClaw skill
+├── .env.example
+├── PRD.md                       # Product requirements
+├── CLAUDE.md                    # Claude Code context
+└── tailwind.config.ts           # Design system config
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Design System
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Colors
+- **Primary:** `#E53935` (Google Red)
+- **Surface:** `#FFFFFF`
+- **On Surface:** `#1A1A1A`
+- **Error:** `#B00020`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Components
+- Material 3 buttons (filled, tonal, text)
+- Elevated cards (12px radius)
+- FAB for primary actions
+- Bottom navigation
 
-## Deploy on Vercel
+## How It Works
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Upload Flow
+1. User selects file → file metadata uploaded to GitHub Gist
+2. Gist ID returned → shareable link generated
+3. Link includes Gist ID for recipient
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Transfer Flow
+1. Recipient opens link → fetches metadata from Gist
+2. WebRTC P2P connection establishes
+3. File transfers directly between browsers
+4. Encrypted end-to-end
+
+### GitHub Integration
+- **Gist** — Stores file metadata (free, unlimited)
+- **OAuth** — User identification (future)
+- **No file content** — Only metadata, never file data
+
+## Commands
+
+```bash
+npm run dev      # Development server
+npm run build    # Production build
+npm start        # Start production server
+npm run lint     # Lint code
+```
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `GITHUB_TOKEN` | GitHub personal access token (scopes: gist) |
+| `GITHUB_CLIENT_ID` | GitHub OAuth app client ID (future) |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth app secret (future) |
+| `CLAWSHARE_URL` | Base URL for share links |
+
+## Freemium Model
+
+| Tier | Files | Transfers | Price |
+|------|-------|-----------|-------|
+| Free | 100MB | 10/day | $0 |
+| Pro | 1GB | Unlimited | $5/mo |
+| Team | 5GB | Unlimited | $15/mo |
+
+## Tech Stack
+
+- **Frontend:** Next.js 14, TypeScript, Tailwind CSS
+- **Backend:** Next.js API Routes (serverless)
+- **Storage:** GitHub Gist (metadata only)
+- **P2P:** WebRTC Data Channels
+- **Design:** Material Design 3
+
+## License
+
+MIT
+
+---
+
+Built for clawshare.xyz 🚀
