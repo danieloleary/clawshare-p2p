@@ -14,6 +14,7 @@ export default function Home() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const formatFileSize = (bytes: number): string => {
@@ -37,6 +38,7 @@ export default function Home() {
       type: selectedFile.type,
     });
     setUploadProgress(0);
+    setCopySuccess(false);
     setError(null);
     setShareUrl(null);
   }, []);
@@ -119,9 +121,27 @@ export default function Home() {
     }
   };
 
+  const [copySuccess, setCopySuccess] = useState(false);
+
   const copyToClipboard = async () => {
     if (shareUrl) {
       await navigator.clipboard.writeText(shareUrl);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
+
+  const shareViaSystem = async () => {
+    if (shareUrl && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Share ${file?.name || 'file'}`,
+          text: 'Check out this file I shared via ClawShare P2P!',
+          url: shareUrl,
+        });
+      } catch (err) {
+        // User cancelled or error
+      }
     }
   };
 
@@ -260,18 +280,32 @@ export default function Home() {
               {shareUrl}
             </div>
             
-            <button
-              onClick={copyToClipboard}
-              className="btn btn-filled w-full mb-3"
-            >
-              <span className="material-symbols-rounded">content_copy</span>
-              Copy Link
-            </button>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={copyToClipboard}
+                className="btn btn-filled flex-1"
+              >
+                <span className="material-symbols-rounded">
+                  {copySuccess ? "check" : "content_copy"}
+                </span>
+                {copySuccess ? "Copied!" : "Copy Link"}
+              </button>
+              
+              {typeof navigator !== 'undefined' && navigator.share && (
+                <button
+                  onClick={shareViaSystem}
+                  className="btn btn-tonal"
+                >
+                  <span className="material-symbols-rounded">share</span>
+                </button>
+              )}
+            </div>
             
             <button
               onClick={() => { setFile(null); setShareUrl(null); setUploadProgress(0); }}
               className="btn btn-text w-full"
             >
+              <span className="material-symbols-rounded">add</span>
               Share Another File
             </button>
           </div>
