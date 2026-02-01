@@ -1,188 +1,187 @@
 # Product Requirements Document: ClawShare P2P
 
-**Version:** 1.0
+**Version:** 2.0
 **Date:** February 1, 2026
-**Status:** MVP Development
+**Status:** MVP Development - Phase 2: Shell-to-Shell Robustness
+
+---
+
+## Core Philosophy: Crabs First, Humans Second
+
+**The Truth:**
+- ClawShare is NOT a file-sharing app for humans
+- It's a **shell-to-shell, claw-to-claw P2P transfer protocol**
+- The UI is scaffolding for humans—crab-to-crab transfer is the product
+- Humans are clumsy facilitators who drop files or paste codes
+
+**The Mantra:**
+> Make the crab-to-crab transfer unbreakable and invisible.  
+> Make the human UI tolerable, not distracting.  
+> If a feature makes P2P slower, flakier, or more complex → delete it.
+
+**Tagline:**
+> "Claw to claw. Shell to shell. Direct. Encrypted. No servers touched."
 
 ---
 
 ## Overview
 
-ClawShare P2P is a peer-to-peer file sharing platform that uses GitHub as a signaling layer and WebRTC for direct browser-to-browser file transfers. The product targets users who need fast, secure, free file sharing without relying on centralized servers.
+ClawShare P2P is a peer-to-peer file transfer protocol where two devices find each other via GitHub Gist breadcrumbs, then rip files directly over WebRTC like crabs in a death grip. No servers, no logs, pure direct armored transfer.
 
 ## Problem Statement
 
-Existing file sharing solutions have significant drawbacks:
-- **Centralized storage** — Files go through third-party servers (privacy concerns)
-- **File size limits** — Most free services cap at 100MB or less
-- **Expiry issues** — Links expire unexpectedly
-- **Paywalls** — Basic features locked behind subscriptions
+Existing solutions:
+- **Centralized storage** — Files go through servers (privacy nightmare)
+- **Middleman touching payload** — Servers see your data
+- **Slow transfers** — Server bottleneck
+- **Complex UX** — Over engineered for simple task
 
 ## Solution
 
-ClawShare P2P enables direct file transfer between devices using:
-- **GitHub Gist API** — For metadata storage and peer discovery (signaling)
-- **WebRTC Data Channels** — For encrypted direct browser-to-browser transfer
-- **GitHub Pages** — For the web UI
+ClawShare enables direct shell-to-shell transfer:
+1. **Sender** drops file → metadata to GitHub Gist
+2. **Receiver** opens link → fetches metadata
+3. **Devices** handshake via Gist breadcrumbs
+4. **WebRTC** blasts files directly (never touches servers)
+5. **Transfer complete** — crabs release grip
+
+---
+
+## Priority Order
+
+### Priority Zero: Shell-to-Shell Robustness (Current Focus)
+1. ✅ Bulletproof WebRTC reconnection (auto-retry on ICE disconnect)
+2. ✅ Chunked transfer with resume (track offset, resume from last acknowledged chunk)
+3. ✅ ICE restart on failure
+4. ✅ Exponential backoff reconnect (max 5 attempts)
+5. ⏳ NAT traversal (STUN/TURN configuration)
+6. ⏳ Large-file handling (2GB+ support, no memory blowup)
+
+### Priority 1: Human Scaffolding (Minimal)
+1. ✅ Copy-to-clipboard (tiny button)
+2. ⏳ QR code for phone transfers
+3. ✅ File previews: Only sender's drop zone
+4. ⏳ Receiver minimal UI: "Incoming from claw @ [code] – [size]"
+5. ✅ Simple progress: "Claw gripping... 45% (8.2 MB/s)"
+6. ⏳ Ugly-truth rate limiting: "Your human has 4/10 free grips left today"
+
+### Kill or Defer
+- ❌ Auth / GitHub login (kills zero-friction crab magic)
+- ❌ Full transfer dashboard
+- ❌ Confetti, success fireworks
+- ❌ Fancy settings (dark mode toggle only for now)
+
+---
 
 ## Core Features (MVP)
 
-### 1. File Upload & Share
+### 1. File Metadata & Signaling
 - Users select a file from their device
 - File metadata uploaded to GitHub Gist
 - Shareable link generated with Gist ID
-- Link works for any recipient with the URL
+- Gist stores: filename, size, hash, sender ID, timestamps
 
-### 2. P2P Transfer
+### 2. P2P Transfer (WebRTC Data Channels)
 - Recipient opens link → fetches metadata from Gist
-- WebRTC connection established (simulated in MVP)
-- File transfers directly between browsers
-- Encrypted end-to-end
+- WebRTC connection established directly between browsers
+- File transfers in 16KB chunks
+- Resume support: if connection drops, resume from last offset
+- Auto-reconnect: ICE failure triggers retry with backoff
+- Encrypted end-to-end (DTLS)
 
 ### 3. Transfer Status
-- Real-time progress indicator
-- Connection status (connecting/transferring/complete)
-- Cancel transfer option
+- Simple text-first progress: "Claw gripping... 45% (8.2 MB/s)"
+- Connection state: connecting → transferring → complete
+- Fail state: "Shell lost connection – retrying claw grip..."
 
-### 4. GitHub Integration
-- OAuth for user identification (optional)
-- Gist for metadata storage (free, unlimited)
-- No file content stored on GitHub
+### 4. Rate Limiting (Free Tier)
+- 100MB file size limit
+- 10 transfers/day
+- Block with ugly-truth message when exceeded
 
-## Design System
-
-### Colors
-- **Primary:** #E53935 (Google Red)
-- **Surface:** #FFFFFF
-- **On Surface:** #1A1A1A
-- **Error:** #B00020
-
-### Typography
-- **Font:** Inter (Google Sans alternative)
-- **Scale:** Material 3 type scale
-
-### Components
-- Material 3 buttons (filled, tonal, text)
-- Elevated cards (12px border radius)
-- FAB for primary actions
-- Bottom navigation
-
-### Layout
-- Mobile-first, responsive
-- 8pt grid system
-- 12px default radius, 16px cards
+---
 
 ## Technical Architecture
 
 ### Frontend
-- Next.js 14 (App Router)
-- TypeScript
-- Tailwind CSS
-- Material Design 3
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS (minimal, dark mode default)
 
-### Backend (Serverless)
-- Next.js API Routes
-- GitHub API integration
+### Signaling
+- **GitHub Gist API** — For metadata storage and peer discovery
+- Gist description format: `clawshare:filename:fileHash`
 
 ### P2P Layer
-- WebRTC Data Channels (future)
-- GitHub Gist for signaling (MVP simulation)
+- **WebRTC Data Channels** — Direct encrypted transfer
+- **STUN servers** — Google public STUN for NAT traversal
+- **Chunk size:** 16KB for reliable transfer
 
-### Storage
-- GitHub Gist for metadata (free)
-- No file content storage (direct P2P)
+### No Server Storage
+- GitHub only sees metadata (filename, size, hash)
+- File content never leaves sender's device
+- Receivers fetch directly from sender via WebRTC
 
-## File Structure
+---
 
-```
-clawshare-p2p/
-├── src/
-│   ├── app/
-│   │   ├── page.tsx              # Upload UI
-│   │   ├── layout.tsx            # Root layout
-│   │   ├── globals.css           # Material 3 styles
-│   │   ├── api/
-│   │   │   └── gist/
-│   │   │       └── route.ts      # Gist API routes
-│   │   └── s/[gistId]/
-│   │       ├── page.tsx          # Transfer page
-│   │       └── ShareClient.tsx   # Transfer UI
-│   └── components/               # Reusable components
-├── .env.example                  # Environment template
-├── README.md                     # Quick start
-├── tailwind.config.ts            # Design system
-└── package.json
-```
+## Design System
 
-## Freemium Model
+### Colors
+- **Claw Red:** #FF3D00 (primary accent)
+- **Dark Shell:** #1A1A1A (background)
+- **Surface:** #FFFFFF (cards)
+- **Success Green:** #00C853
 
-| Tier | File Size | Transfers | Price |
-|------|-----------|-----------|-------|
-| Free | 100MB | 10/day | $0 |
-| Pro | 1GB | Unlimited | $5/mo |
-| Team | 5GB | Unlimited | $15/mo |
+### Typography
+- **Headings/Logo:** Fredoka (crab energy)
+- **Body:** Inter (clean, readable)
 
-## Success Metrics (MVP)
+### Visual Elements
+- 🦀 sparingly but deliberately
+- Minimal animations (only for feedback)
+- Dark mode default (shells are dark)
 
-1. ✅ Upload page loads successfully
-2. ✅ File uploads to Gist metadata
-3. ✅ Share link generates correctly
-4. ✅ Recipient fetches metadata from Gist
-5. ✅ Transfer status displays correctly
-6. ✅ File content transfers (simulated)
-7. ✅ Error handling for network failures
+---
+
+## Non-Negotiables (Test These)
+
+1. ✅ Phone on cellular → laptop on WiFi transfer
+2. ⏳ Close/reopen tab mid-transfer (should resume)
+3. ⏳ Airplane mode toggle (should recover)
+4. ⏳ Measure: time-to-first-byte after code entry
+5. ⏳ Transfer time vs direct USB benchmark
+6. ⏳ Lighthouse perf > 95
+
+**After every change:** "Does this make shell-to-shell faster/more reliable? Or just prettier for humans?"
+
+---
+
+## Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Transfer completion rate | > 95% |
+| Auto-reconnect success | > 80% |
+| Lighthouse performance | > 95 |
+| Time to first byte | < 2s |
+| Large file support (2GB+) | No memory blowup |
+
+---
 
 ## Future Enhancements (Post-MVP)
 
-1. **Real WebRTC P2P**
-   - Direct browser-to-browser transfer
-   - No base64 encoding (true P2P)
-   - Faster for large files
+1. **QR Code Transfer** — Scan to connect phone ↔ laptop
+2. **TURN Server** — For symmetric NAT traversal
+3. **QR Link Sharing** — Quick transfer between devices
+4. **Local History** — Last 5-10 transfers only
+5. **Pro Tier** — Unlimited transfers, larger files
 
-2. **WebSocket Signaling**
-   - Real-time peer discovery
-   - Faster connection setup
+---
 
-3. **Payment Integration**
-   - Stripe for Pro/Team tiers
-   - Usage analytics
+## Constraints
 
-4. **User Accounts**
-   - GitHub OAuth
-   - Transfer history
-   - Link management
-
-5. **QR Codes**
-   - Quick transfer between devices
-   - Offline sharing mode
-
-## Constraints & Risks
-
-### Technical
-- GitHub API rate limits (60 requests/hour for unauthenticated)
-- Base64 encoding adds 33% overhead
-- Browser compatibility for WebRTC
-
-### Legal
-- Terms of service needed
-- DMCA policy for copyrighted content
-- Privacy policy for user data
-
-## Implementation Plan
-
-### Phase 1: MVP (Current)
-- Upload UI with drag-and-drop
-- Gist API integration
-- Share link generation
-- Transfer status display
-- Basic error handling
-
-### Phase 2: P2P (Future)
-- WebRTC Data Channels
-- Real P2P transfer
-- Signaling server
-
-### Phase 3: Monetization
-- Stripe integration
-- Pro/Team tiers
-- Analytics dashboard
+- No auth required (zero-friction)
+- No server-side file storage
+- No analytics/tracking
+- Open source, auditable
+- No bloat features
